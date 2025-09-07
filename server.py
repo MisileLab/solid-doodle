@@ -1,8 +1,9 @@
 import os
 import uvicorn
+import platform
+import subprocess
 from fastapi import FastAPI
 from gtts import gTTS
-from playsound import playsound
 
 # --- Audio Configuration ---
 AUDIO_DIR = "tts_audio"
@@ -19,6 +20,71 @@ TTS_MESSAGES = [
     "발사! 발사! 발사! 발사!",
     "불이 꺼졌습니다. 자세를 낮추고 안전한 곳으로 대피하세요. 시뮬레이션을 종료합니다."
 ]
+
+def play_audio_cross_platform(audio_file):
+    """
+    Cross-platform audio player using system commands.
+    """
+    system = platform.system().lower()
+    
+    try:
+        if system == "windows":
+            # Windows: use built-in media player with volume control
+            os.system(f'powershell -c "(New-Object Media.SoundPlayer \\"{audio_file}\\").PlaySync()"')
+        elif system == "darwin":  # macOS
+            subprocess.run(["afplay", "-v", "1.5", audio_file], check=True)  # 150% 음량
+        elif system == "linux":
+            # Try multiple Linux audio players in order of preference
+            players = ["paplay", "aplay", "mpg123", "mpv", "vlc", "mplayer"]
+            
+            for player in players:
+                try:
+                    # Check if player is available
+                    subprocess.run(["which", player], 
+                                 check=True, 
+                                 stdout=subprocess.DEVNULL, 
+                                 stderr=subprocess.DEVNULL)
+                    
+                    # Play audio with the available player
+                    if player == "paplay":
+                        subprocess.run([player, audio_file], check=True)
+                    elif player == "aplay":
+                        subprocess.run([player, audio_file], check=True)
+                    elif player == "mpg123":
+                        subprocess.run([player, "-q", "-d", "50", audio_file], check=True)  # -d 50으로 속도 증가
+                    elif player in ["mpv", "vlc", "mplayer"]:
+                        subprocess.run([player, "--no-video", "--speed=1.2", audio_file], check=True)  # 1.2배속으로 재생
+                    
+                    print(f"Successfully played audio using {player}")
+                    return True
+                    
+                except subprocess.CalledProcessError:
+                    continue
+                except FileNotFoundError:
+                    continue
+            
+            # If no player worked, try pygame as fallback
+            try:
+                import pygame
+                pygame.mixer.init()
+                pygame.mixer.music.load(audio_file)
+                pygame.mixer.music.play()
+                while pygame.mixer.music.get_busy():
+                    pygame.time.wait(100)
+                pygame.mixer.quit()
+                print("Successfully played audio using pygame")
+                return True
+            except ImportError:
+                pass
+            except Exception as e:
+                print(f"Pygame error: {e}")
+            
+            raise Exception("No suitable audio player found on Linux system")
+        else:
+            raise Exception(f"Unsupported operating system: {system}")
+            
+    except Exception as e:
+        raise Exception(f"Failed to play audio: {e}")
 
 def prepare_all_sounds():
     """Generates all TTS audio files if they don't exist."""
@@ -39,6 +105,30 @@ app = FastAPI()
 async def startup_event():
     """Prepare all sound files when the server starts."""
     prepare_all_sounds()
+    
+    # Print system information
+    system = platform.system()
+    print(f"Running on {system} system")
+    
+    # Check available audio players on Linux
+    if system.lower() == "linux":
+        players = ["paplay", "aplay", "mpg123", "mpv", "vlc", "mplayer"]
+        available_players = []
+        
+        for player in players:
+            try:
+                subprocess.run(["which", player], 
+                             check=True, 
+                             stdout=subprocess.DEVNULL, 
+                             stderr=subprocess.DEVNULL)
+                available_players.append(player)
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                continue
+        
+        if available_players:
+            print(f"Available audio players: {', '.join(available_players)}")
+        else:
+            print("Warning: No standard audio players found. Will try pygame as fallback.")
 
 @app.get("/")
 def read_root():
@@ -54,7 +144,7 @@ async def speak_message(index: int):
         if os.path.exists(audio_file):
             try:
                 print(f"Received request, playing message index {index}: {TTS_MESSAGES[index]}")
-                playsound(audio_file)
+                play_audio_cross_platform(audio_file)
                 return {"status": "success", "message_played": TTS_MESSAGES[index]}
             except Exception as e:
                 print(f"Error playing sound for index {index}: {e}")
