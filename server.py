@@ -23,58 +23,21 @@ TTS_MESSAGES = [
 
 def play_audio_cross_platform(audio_file):
     """
-    Cross-platform audio player using system commands with 400% volume.
+    Cross-platform audio player using system commands.
     """
     system = platform.system().lower()
     
     try:
         if system == "windows":
-            # Windows: use PowerShell with volume amplification (4.0 = 400%)
-            powershell_cmd = f'''
-            Add-Type -AssemblyName presentationCore
-            $mediaPlayer = New-Object system.windows.media.mediaplayer
-            $mediaPlayer.open([System.Uri]::new("{audio_file}"))
-            $mediaPlayer.Volume = 1.0
-            $mediaPlayer.Play()
-            Start-Sleep -Milliseconds 500
-            while($mediaPlayer.NaturalDuration.HasTimeSpan -eq $false) {{ Start-Sleep -Milliseconds 50 }}
-            $duration = $mediaPlayer.NaturalDuration.TimeSpan.TotalMilliseconds
-            Start-Sleep -Milliseconds $duration
-            $mediaPlayer.Close()
-            '''
-            # Use ffplay for better volume control on Windows
-            try:
-                subprocess.run(["ffplay", "-nodisp", "-autoexit", "-volume", "400", audio_file], 
-                             check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except (FileNotFoundError, subprocess.CalledProcessError):
-                # Fallback to PowerShell
-                subprocess.run(["powershell", "-Command", powershell_cmd], check=True)
-                
+            # Windows: use built-in media player with volume control
+            os.system(f'powershell -c "(New-Object Media.SoundPlayer \\"{audio_file}\\").PlaySync()"')
         elif system == "darwin":  # macOS
-            # macOS: use afplay with maximum volume amplification (4.0 = 400%)
-            subprocess.run(["afplay", "-v", "4.0", audio_file], check=True)
-            
+            subprocess.run(["afplay", "-v", "1.5", audio_file], check=True)  # 150% 음량
         elif system == "linux":
-            # Try multiple Linux audio players with volume amplification
-            players_with_volume = [
-                ("ffplay", ["-nodisp", "-autoexit", "-volume", "400", audio_file]),
-                ("mpv", ["--no-video", "--volume=400", "--speed=1.0", audio_file]),
-                ("vlc", ["--no-video", "--gain=12", "--volume=400", "--play-and-exit", audio_file]),
-                ("mplayer", ["-volume", "400", "-novideo", audio_file]),
-                ("paplay", ["--volume", "65536", audio_file]),  # 65536 = 400% for pulseaudio
-                ("aplay", ["-D", "pulse", audio_file])  # Use with pulseaudio volume control
-            ]
+            # Try multiple Linux audio players in order of preference
+            players = ["paplay", "aplay", "mpg123", "mpv", "vlc", "mplayer"]
             
-            # First try to set system volume high for basic players
-            try:
-                subprocess.run(["amixer", "set", "Master", "100%"], 
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                subprocess.run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", "400%"], 
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except:
-                pass  # Ignore if volume control commands fail
-            
-            for player, cmd in players_with_volume:
+            for player in players:
                 try:
                     # Check if player is available
                     subprocess.run(["which", player], 
@@ -82,33 +45,34 @@ def play_audio_cross_platform(audio_file):
                                  stdout=subprocess.DEVNULL, 
                                  stderr=subprocess.DEVNULL)
                     
-                    # Play audio with volume amplification
-                    subprocess.run(cmd, check=True, 
-                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    # Play audio with the available player
+                    if player == "paplay":
+                        subprocess.run([player, audio_file], check=True)
+                    elif player == "aplay":
+                        subprocess.run([player, audio_file], check=True)
+                    elif player == "mpg123":
+                        subprocess.run([player, "-q", "-d", "50", audio_file], check=True)  # -d 50으로 속도 증가
+                    elif player in ["mpv", "vlc", "mplayer"]:
+                        subprocess.run([player, "--no-video", "--speed=1.2", audio_file], check=True)  # 1.2배속으로 재생
                     
-                    print(f"Successfully played audio at 400% volume using {player}")
+                    print(f"Successfully played audio using {player}")
                     return True
                     
-                except (subprocess.CalledProcessError, FileNotFoundError):
+                except subprocess.CalledProcessError:
+                    continue
+                except FileNotFoundError:
                     continue
             
-            # If no player worked, try pygame with volume amplification
+            # If no player worked, try pygame as fallback
             try:
                 import pygame
-                pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=512)
                 pygame.mixer.init()
-                
-                # Load and play with volume adjustment
-                sound = pygame.mixer.Sound(audio_file)
-                sound.set_volume(1.0)  # Pygame max volume
-                sound.play()
-                
-                # Wait for sound to finish
-                while pygame.mixer.get_busy():
+                pygame.mixer.music.load(audio_file)
+                pygame.mixer.music.play()
+                while pygame.mixer.music.get_busy():
                     pygame.time.wait(100)
-                    
                 pygame.mixer.quit()
-                print("Successfully played audio using pygame (note: pygame limited to 100% volume)")
+                print("Successfully played audio using pygame")
                 return True
             except ImportError:
                 pass
@@ -120,7 +84,7 @@ def play_audio_cross_platform(audio_file):
             raise Exception(f"Unsupported operating system: {system}")
             
     except Exception as e:
-        raise Exception(f"Failed to play audio at 400% volume: {e}")
+        raise Exception(f"Failed to play audio: {e}")
 
 def prepare_all_sounds():
     """Generates all TTS audio files if they don't exist."""
@@ -144,11 +108,11 @@ async def startup_event():
     
     # Print system information
     system = platform.system()
-    print(f"Running on {system} system with 400% volume amplification")
+    print(f"Running on {system} system")
     
-    # Check available audio players
+    # Check available audio players on Linux
     if system.lower() == "linux":
-        players = ["ffplay", "mpv", "vlc", "mplayer", "paplay", "aplay"]
+        players = ["paplay", "aplay", "mpg123", "mpv", "vlc", "mplayer"]
         available_players = []
         
         for player in players:
@@ -162,41 +126,26 @@ async def startup_event():
                 continue
         
         if available_players:
-            print(f"Available audio players with volume control: {', '.join(available_players)}")
+            print(f"Available audio players: {', '.join(available_players)}")
         else:
             print("Warning: No standard audio players found. Will try pygame as fallback.")
-            
-        # Check if volume control utilities are available
-        volume_utils = []
-        for util in ["amixer", "pactl"]:
-            try:
-                subprocess.run(["which", util], 
-                             check=True, 
-                             stdout=subprocess.DEVNULL, 
-                             stderr=subprocess.DEVNULL)
-                volume_utils.append(util)
-            except:
-                pass
-        
-        if volume_utils:
-            print(f"Available volume control utilities: {', '.join(volume_utils)}")
 
 @app.get("/")
 def read_root():
-    return {"message": "G-FIRE Assist Server is running with 400% volume amplification. POST to /speak/{index} to play a message."}
+    return {"message": "G-FIRE Assist Server is running. POST to /speak/{index} to play a message."}
 
 @app.post("/speak/{index}")
 async def speak_message(index: int):
     """
-    Plays a pre-generated TTS message based on the index at 400% volume.
+    Plays a pre-generated TTS message based on the index.
     """
     if 0 <= index < len(TTS_MESSAGES):
         audio_file = os.path.join(AUDIO_DIR, f"speech_{index}.mp3")
         if os.path.exists(audio_file):
             try:
-                print(f"Received request, playing message index {index} at 400% volume: {TTS_MESSAGES[index]}")
+                print(f"Received request, playing message index {index}: {TTS_MESSAGES[index]}")
                 play_audio_cross_platform(audio_file)
-                return {"status": "success", "message_played": TTS_MESSAGES[index], "volume": "400%"}
+                return {"status": "success", "message_played": TTS_MESSAGES[index]}
             except Exception as e:
                 print(f"Error playing sound for index {index}: {e}")
                 return {"status": "error", "message": str(e)}
