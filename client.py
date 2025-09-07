@@ -1,11 +1,40 @@
 import time
 import requests
 import modi_plus
+import json
+import os
 
-# -- Server Communication --
+CONFIG_FILE = "client_config.json"
+
 def get_server_url():
-    server_ip = input("Enter the IP address of the G-FIRE Assist server: ")
-    return f"http://{server_ip}:8000"
+    """
+    Gets the server URL. Tries to load from a config file first,
+    otherwise prompts the user and saves it for next time.
+    """
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+                saved_url = config.get("server_url")
+                if saved_url:
+                    use_saved = input(f"Found saved server URL: {saved_url}. Use it? (Y/n): ").lower().strip()
+                    if use_saved in ['', 'y', 'yes']:
+                        return saved_url
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Warning: Could not read config file. {e}")
+
+    # Prompt for new URL if not found or not used
+    server_url = input("Enter the full server address (e.g., http://192.168.1.10:8000 or https://your-ngrok-url.io): ")
+    
+    # Save the new URL
+    try:
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump({"server_url": server_url}, f)
+        print(f"Server URL saved to {CONFIG_FILE} for future use.")
+    except IOError as e:
+        print(f"Warning: Could not save config file. {e}")
+        
+    return server_url
 
 def call_speak_endpoint(base_url, index):
     """Calls the server's speak endpoint."""
