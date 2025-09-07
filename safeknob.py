@@ -10,10 +10,24 @@ def run_safeknob():
     try:
         print("MODI+ 모듈을 초기화합니다 (SafeKnob)...")
         bundle = modi_plus.MODIPlus()
+        
+        # 모듈 연결 상태 확인
+        print(f"연결된 모듈 수: Env={len(bundle.envs)}, LED={len(bundle.leds)}, Speaker={len(bundle.speakers)}")
+        
+        if len(bundle.envs) == 0:
+            print("❌ Env 모듈이 연결되지 않았습니다!")
+            return
+        if len(bundle.leds) == 0:
+            print("❌ LED 모듈이 연결되지 않았습니다!")
+            return
+        if len(bundle.speakers) == 0:
+            print("❌ Speaker 모듈이 연결되지 않았습니다!")
+            return
+            
         env = bundle.envs[0]
         led = bundle.leds[0]
         speaker = bundle.speakers[0]
-        print("초기화 완료. SafeKnob 작동을 시작합니다.")
+        print("✅ 초기화 완료. SafeKnob 작동을 시작합니다.")
         time.sleep(1)
 
     except Exception as e:
