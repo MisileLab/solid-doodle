@@ -102,7 +102,7 @@ def main():
 
                 if is_beeping:
                     if time.time() - beep_time > 0.5:
-                        speaker.set_tune(1500, 200)
+                        speaker.set_tune(1500, 100)
                         time.sleep(0.1)
                         speaker.reset()
                         beep_time = time.time()
