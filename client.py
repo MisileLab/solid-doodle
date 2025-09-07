@@ -107,10 +107,9 @@ def main():
                         speaker.reset()
                         beep_time = time.time()
                     
-                    acc_x, acc_y, acc_z = imu.acceleration_x, imu.acceleration_y, imu.acceleration_z
-                    total_acc = (acc_x**2 + acc_y**2 + acc_z**2)**0.5
-                    print(f"\rAcc: {total_acc:.2f} (threshold: {PICK_UP_ACCELERATION_THRESHOLD})", end="")
-                    if total_acc > PICK_UP_ACCELERATION_THRESHOLD:
+                    acc_y = imu.acceleration_y
+                    print(f"\rAcc Y: {acc_y:.2f} (threshold: {PICK_UP_ACCELERATION_THRESHOLD})", end="")
+                    if abs(acc_y) > PICK_UP_ACCELERATION_THRESHOLD:
                         print("\nExtinguisher picked up!")
                         is_beeping = False
                         speaker.reset()
