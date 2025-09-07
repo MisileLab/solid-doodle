@@ -118,34 +118,40 @@ def main():
 
             elif current_state == State.START:
                 call_speak_endpoint(server_base_url, 0)
-                current_state = State.ROTATE_TO_BREAK_TIE
+                print("Press button to proceed to next step.")
+                if button.clicked:
+                    print("Button clicked! Moving to next step.")
+                    current_state = State.ROTATE_TO_BREAK_TIE
+                    time.sleep(1)
 
             elif current_state == State.ROTATE_TO_BREAK_TIE:
-                if abs(imu.angular_vel_z) > ROTATION_VELOCITY_THRESHOLD:
-                    print("Rotation detected!")
+                print("Press button to rotate and break the tie.")
+                if button.clicked:
+                    print("Button clicked! Tie broken.")
                     call_speak_endpoint(server_base_url, 1)
                     current_state = State.PLACE_ON_FLOOR
                     time.sleep(2)
 
             elif current_state == State.PLACE_ON_FLOOR:
-                if abs(imu.roll) > 70:
-                    print("Placed on floor detected!")
+                print("Press button to place on floor.")
+                if button.clicked:
+                    print("Button clicked! Placed on floor.")
                     call_speak_endpoint(server_base_url, 2)
                     current_state = State.PULL_PIN
                     time.sleep(2)
 
             elif current_state == State.PULL_PIN:
-                acc_x, acc_y, acc_z = imu.acceleration_x, imu.acceleration_y, imu.acceleration_z
-                total_acc = (acc_x**2 + acc_y**2 + acc_z**2)**0.5
-                if total_acc > SHAKE_ACCELERATION_THRESHOLD:
-                    print("Shake detected (pull pin)!")
+                print("Press button to pull the pin.")
+                if button.clicked:
+                    print("Button clicked! Pin pulled.")
                     call_speak_endpoint(server_base_url, 3)
                     current_state = State.AIM_NOZZLE
                     time.sleep(2)
 
             elif current_state == State.AIM_NOZZLE:
-                if abs(imu.roll) < AIM_ANGLE_THRESHOLD:
-                    print("Aiming detected!")
+                print("Press button to aim nozzle.")
+                if button.clicked:
+                    print("Button clicked! Nozzle aimed.")
                     call_speak_endpoint(server_base_url, 4)
                     current_state = State.SQUEEZE_HANDLE
                     time.sleep(3)
