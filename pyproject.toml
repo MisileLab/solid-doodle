@@ -3,11 +3,11 @@ name = "solid-doodle"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]>=0.116.1",
     "gtts>=2.5.4",
-    "playsound==1.2.2",
+    "playsound>=1.2.2",
     "pymodi-plus>=0.3.1",
     "requests>=2.32.5",
 ]
