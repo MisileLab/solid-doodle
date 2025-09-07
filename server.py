@@ -32,7 +32,7 @@ def play_audio_cross_platform(audio_file):
             # Windows: use built-in media player with volume control
             os.system(f'powershell -c "(New-Object Media.SoundPlayer \\"{audio_file}\\").PlaySync()"')
         elif system == "darwin":  # macOS
-            subprocess.run(["afplay", "-v", "1.5", audio_file], check=True)  # 150% 음량
+            subprocess.run(["afplay", "-v", "3.0", audio_file], check=True)  # 300% 음량
         elif system == "linux":
             # Try multiple Linux audio players in order of preference
             players = ["paplay", "aplay", "mpg123", "mpv", "vlc", "mplayer"]
@@ -47,13 +47,17 @@ def play_audio_cross_platform(audio_file):
                     
                     # Play audio with the available player
                     if player == "paplay":
-                        subprocess.run([player, audio_file], check=True)
+                        subprocess.run([player, "--volume=65536", audio_file], check=True)  # 300% volume (65536 = 4 * 16384)
                     elif player == "aplay":
                         subprocess.run([player, audio_file], check=True)
                     elif player == "mpg123":
-                        subprocess.run([player, "-q", "-d", "50", audio_file], check=True)  # -d 50으로 속도 증가
-                    elif player in ["mpv", "vlc", "mplayer"]:
-                        subprocess.run([player, "--no-video", "--speed=1.2", audio_file], check=True)  # 1.2배속으로 재생
+                        subprocess.run([player, "-q", "-d", "50", "-f", "32768", audio_file], check=True)  # 300% volume with -f
+                    elif player == "mpv":
+                        subprocess.run([player, "--no-video", "--speed=1.2", "--volume=300", audio_file], check=True)  # 400% volume
+                    elif player == "vlc":
+                        subprocess.run([player, "--no-video", "--speed=1.2", "--volume=300", audio_file], check=True)  # 400% volume
+                    elif player == "mplayer":
+                        subprocess.run([player, "--no-video", "--speed=1.2", "-volume", "300", audio_file], check=True)  # 400% volume
                     
                     print(f"Successfully played audio using {player}")
                     return True
@@ -68,6 +72,7 @@ def play_audio_cross_platform(audio_file):
                 import pygame
                 pygame.mixer.init()
                 pygame.mixer.music.load(audio_file)
+                pygame.mixer.music.set_volume(2.5)  # 250% volume (though pygame typically caps at 1.0)
                 pygame.mixer.music.play()
                 while pygame.mixer.music.get_busy():
                     pygame.time.wait(100)
