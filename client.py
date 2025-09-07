@@ -89,6 +89,7 @@ def main():
     # -- State Machine Loop --
     is_beeping = False
     beep_time = 0
+    voice_played = False
     
     while current_state < State.END:
         try:
@@ -117,11 +118,14 @@ def main():
                         time.sleep(1)
 
             elif current_state == State.START:
-                call_speak_endpoint(server_base_url, 0)
-                print("Press button to proceed to next step.")
+                if not voice_played:
+                    call_speak_endpoint(server_base_url, 0)
+                    voice_played = True
+                    print("Press button to proceed to next step.")
                 if button.clicked:
                     print("Button clicked! Moving to next step.")
                     current_state = State.ROTATE_TO_BREAK_TIE
+                    voice_played = False
                     time.sleep(1)
 
             elif current_state == State.ROTATE_TO_BREAK_TIE:
