@@ -41,7 +41,7 @@ def call_speak_endpoint(base_url, index):
     try:
         url = f"{base_url}/speak/{index}"
         print(f"Calling endpoint: {url}")
-        response = requests.post(url, timeout=5)
+        response = requests.post(url, timeout=None)
         response.raise_for_status()
         print("Server acknowledged speak request.")
     except requests.exceptions.RequestException as e:
