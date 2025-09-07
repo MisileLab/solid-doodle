@@ -1,0 +1,11 @@
+[project]
+name = "solid-doodle"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "gtts>=2.5.4",
+    "playsound==1.2.2",
+    "pymodi-plus>=0.3.1",
+]
