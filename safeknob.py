@@ -102,23 +102,16 @@ def run_safeknob():
                 temp = env.temperature
                 temp_source = "센서"
             
-            print(f"현재 온도: {temp:.1f}°C ({temp_source}) | 경고: {WARNING_TEMP}°C, 위험: {CRITICAL_TEMP}°C    ", end='\r')
+            print(f"현재 온도: {temp:.1f}°C ({temp_source}) | 위험: {WARNING_TEMP}°C    ", end='\r')
 
             # 1. 고온 위험 (적색 경고 + 삐 소리)
-            if temp > CRITICAL_TEMP:
+            if temp > WARNING_TEMP:
                 led.set_rgb(255, 0, 0)  # 빨간색
                 if not is_beeping:
                     speaker.set_tune(frequency=2000, volume=100)
                     is_beeping = True
             
-            # 2. 예비 경고 (황색)
-            elif temp > WARNING_TEMP:
-                led.set_rgb(255, 165, 0)  # 주황색
-                if is_beeping:
-                    speaker.turn_off()
-                    is_beeping = False
-            
-            # 3. 안전 (녹색)
+            # 2. 안전 (녹색)
             else:
                 led.set_rgb(0, 255, 0)  # 초록색
                 if is_beeping:
