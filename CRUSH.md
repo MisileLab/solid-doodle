@@ -4,8 +4,11 @@
 - **Run server**: `uvicorn server:app --reload --host 0.0.0.0 --port 8000`
 - **Run client**: `python client.py`
 - **Run safeknob**: `python safeknob.py`
+- **Run SafeKnob app**: `python safeknob_app.py`
+- **Run SafeKnob web**: `uvicorn safeknob_web:app --reload --host 0.0.0.0 --port 8001`
 - **Install dependencies**: `uv sync` (uv.lock present)
 - **Check server**: `curl http://localhost:8000/`
+- **Check SafeKnob web**: `curl http://localhost:8001/`
 - **Test speak endpoint**: `curl -X POST http://localhost:8000/speak/0`
 
 ## Code Style
@@ -19,6 +22,8 @@
 - `server.py`: FastAPI server with TTS audio generation/playback
 - `client.py`: MODI+ device client with state machine logic  
 - `safeknob.py`: Safety monitoring module with temperature/light sensors
+- `safeknob_app.py`: SafeKnob door handle safety monitor with LED/sound alerts
+- `safeknob_web.py`: Web dashboard for SafeKnob monitoring system
 - `tts_audio/`: Generated Korean TTS audio files
 - `typings/`: MODI+ library type stubs
 

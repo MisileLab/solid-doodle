@@ -104,7 +104,7 @@ def main():
                     if time.time() - beep_time > 0.5:
                         speaker.set_tune(1500, 80)
                         time.sleep(0.1)
-                        speaker.turn_off()
+                        speaker.reset()
                         beep_time = time.time()
                     
                     acc_x, acc_y, acc_z = imu.acceleration_x, imu.acceleration_y, imu.acceleration_z
@@ -112,7 +112,7 @@ def main():
                     if total_acc > PICK_UP_ACCELERATION_THRESHOLD:
                         print("\nExtinguisher picked up!")
                         is_beeping = False
-                        speaker.turn_off()
+                        speaker.reset()
                         current_state = State.START
                         time.sleep(1)
 
